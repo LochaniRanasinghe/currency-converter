@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Deployment TODO — Docker on EC2 (Laravel)</title>
+        <style>
+            body {
+                font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial,
+                    sans-serif;
+                margin: 32px;
+                color: #111;
+            }
+            h1 {
+                margin-bottom: 6px;
+            }
+            .kbd {
+                font-family: monospace;
+                background: #f3f3f3;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+            pre {
+                background: #0f1720;
+                color: #d1fae5;
+                padding: 12px;
+                border-radius: 6px;
+                overflow: auto;
+            }
+            ul {
+                line-height: 1.6;
+            }
+            .status {
+                font-weight: 600;
+                color: #0b63c6;
+            }
+            .completed {
+                color: green;
+            }
+            .inprogress {
+                color: orange;
+            }
+            .note {
+                background: #fff8dc;
+                padding: 10px;
+                border-left: 4px solid #f0b429;
+                margin: 12px 0;
+            }
+            .footer {
+                margin-top: 24px;
+                color: #555;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Deployment TODO — Docker + MySQL on EC2</h1>
+        <p class="status">
+            Current plan status:
+            <span class="completed">Choose deployment method — done</span>,
+            <span class="inprogress"
+                >Provision AWS resources — in progress</span
+            >
+        </p>
+
+        <ol>
+            <li>
+                <strong>Provision AWS resources</strong>
+                <ul>
+                    <li>
+                        Create EC2 key pair and security group (SSH, HTTP/HTTPS
+                        allowed as needed)
+                    </li>
+                    <li>
+                        Create IAM role for EC2 with S3 & SQS permissions
+                        (attach as instance profile)
+                    </li>
+                    <li>Create S3 bucket and SQS queue</li>
+                    <li>
+                        (Optional) Create RDS for managed MySQL (recommended for
+                        production)
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong
+                    >Dockerize the Laravel app & create docker-compose</strong
+                >
+                <ul>
+                    <li>
+                        Create a production-friendly
+                        <code>Dockerfile</code> (multi-stage) and an improved
+                        <code>docker-compose.yml</code>.
+                    </li>
+                    <li>
+                        Use named volumes for MySQL (e.g. <code>db_data</code>),
+                        and avoid committing secrets.
+                    </li>
+                    <li>
+                        Prepare an <code>.env.docker</code> (not committed) or
+                        keep a secure <code>.env</code> on the server.
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Test locally</strong>
+                <ul>
+                    <li>
+                        Build images and run <code>docker compose up -d</code>.
+                        Verify the app, migrations, queue worker, and storage.
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Prepare EC2 host</strong>
+                <ul>
+                    <li>
+                        Launch Ubuntu (22.04) or Amazon Linux 2 EC2, attach IAM
+                        role, add key pair, open SG ports.
+                    </li>
+                    <li>
+                        Install Docker & Docker Compose there (or use Docker
+                        Engine + compose plugin).
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Deploy to EC2</strong>
+                <ul>
+                    <li>
+                        Clone your repo on EC2 (or pull images from ECR/Docker
+                        Hub).
+                    </li>
+                    <li>
+                        Copy production <code>.env</code> (with secrets kept off
+                        git).
+                    </li>
+                    <li>
+                        Run <code>docker compose up -d --build</code>, then run
+                        artisan migrations and storage link.
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Integrate SQS & S3</strong>
+                <ul>
+                    <li>
+                        Prefer IAM instance profile for credentials. Otherwise
+                        set AWS_ environment variables in <code>.env</code>.
+                    </li>
+                    <li>
+                        Set <code>FILESYSTEM_DRIVER=s3</code> and SQS related
+                        env vars (QUEUE_CONNECTION=sqs etc.).
+                    </li>
+                    <li>
+                        Verify queue-worker container processes SQS messages and
+                        S3 uploads work.
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Persistence, backups & monitoring</strong>
+                <ul>
+                    <li>
+                        Use a named Docker volume for MySQL and schedule backups
+                        to S3 (mysqldump).
+                    </li>
+                    <li>
+                        Ship logs to CloudWatch or collect them on the host; add
+                        alarms and disk/cpu monitoring.
+                    </li>
+                </ul>
+            </li>
+
+            <li>
+                <strong>Harden & finalize</strong>
+                <ul>
+                    <li>
+                        Move DB to RDS for production reliability when ready.
+                    </li>
+                    <li>
+                        Add HTTPS (ALB+ACM if multiple instances, or certbot on
+                        the EC2/nginx instance for single host).
+                    </li>
+                    <li>
+                        Set up CI/CD (GitHub Actions or CodePipeline) for
+                        automated deploys.
+                    </li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="note">
+            <strong>Quick command snippets</strong> (run locally or on the EC2
+            host where noted):
+            <pre>
+## Build & run locally (dev)
+docker build -t laravel-app .
+docker compose up -d
+
+## Inside app container: run migrations
+docker compose exec app php artisan migrate --force
+
+docker compose exec app php artisan storage:link
+
+## SSH to EC2 (PowerShell example)
+ssh -i C:\path\to\keypair.pem ubuntu@EC2_PUBLIC_IP
+
+## Install Docker (Ubuntu example)
+sudo apt update && sudo apt upgrade -y
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+</pre
+            >
+        </div>
+
+        <p class="footer">
+            Notes: Do not commit <code>.env</code> to git. Prefer IAM roles over
+            static AWS keys. If you want, I can generate a production-ready
+            <code>Dockerfile</code>, <code>docker-compose.yml</code>, and an
+            nginx config tailored to your app — tell me whether you want MySQL
+            in Docker or RDS for production.
+        </p>
+    </body>
+</html>

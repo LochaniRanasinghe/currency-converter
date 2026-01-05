@@ -1,0 +1,6 @@
+customer_id,customer_name,customer_email,amount,currency,reference_no,date_time
+C001,John Doe,john.doe@example.com,1500.50,EUR,REF-2026-001,2026-01-04 10:30:00
+C002,Jane Smith,jane.smith@example.com,2500.75,GBP,REF-2026-002,2026-01-04 11:15:00
+C003,Bob Johnson,bob.johnson@example.com,3200.00,JPY,REF-2026-003,2026-01-04 12:00:00
+C004,Alice Williams,alice.williams@example.com,850.25,CAD,REF-2026-004,2026-01-04 13:45:00
+C005,Charlie Brown,charlie.brown@example.com,1200.00,AUD,REF-2026-005,2026-01-04 14:30:00
