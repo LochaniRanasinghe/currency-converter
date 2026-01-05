@@ -30,6 +30,8 @@ class ProcessPaymentCsv implements ShouldQueue
     }
     public function handle()
     {
+        Log::info("Processing file: {$this->filePath} from disk: {$this->disk} in job queue.");
+        
         // Get file content from storage (S3 or local)
         if (!Storage::disk($this->disk)->exists($this->filePath)) {
             Log::error("File not found: {$this->filePath}");

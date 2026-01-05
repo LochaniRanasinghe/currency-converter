@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Jobs\ProcessPaymentCsv;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UploadPaymentRequest;
+use AWS\CRT\Log;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentController extends Controller
@@ -20,6 +21,9 @@ class PaymentController extends Controller
             $disk = config('filesystems.default');
             $path = $request->file('file')->store('uploads/payments', $disk);
 
+            Log::info("File uploaded to S3 at path: {$path}");
+            Log::info("Using disk: {$disk}");
+            Log::info("Send the data to the job queue");
             // 3. Dispatch the Job with the S3 path
             ProcessPaymentCsv::dispatch($path, $disk);
 
